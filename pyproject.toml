@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "mlops-cifar-classifier"
+version = "0.1.0"
+description = "This repository demonstrates ML"
+authors = ["Adrián Chamorro Fernández <achamorrofdz14@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
