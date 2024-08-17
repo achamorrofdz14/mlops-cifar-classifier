@@ -1,4 +1,4 @@
-FROM python:3.11-bullseye
+FROM nvidia/cuda:12.6.0-cudnn-devel-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -14,6 +14,8 @@ RUN apt-get update \
         htop \
         vim \
         build-essential \
+        python3-pip \
+        libcudnn8 \
     && apt-get upgrade -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

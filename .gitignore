@@ -164,6 +164,7 @@ cython_debug/
 # ignore everything in the following folders
 data/**
 logs/**
+models/**
 
 # except their sub-folders
 !data/**/
