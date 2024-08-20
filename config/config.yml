@@ -1,0 +1,20 @@
+# config.yml
+
+data:
+  image_size: 32
+  mean: [0.4914, 0.4822, 0.4465]
+  std: [0.247, 0.243, 0.261]
+  random_rotation: 20
+  random_horizontal_flip: 0.1
+  color_jitter:
+    brightness: 0.1
+    contrast: 0.1
+    saturation: 0.1
+  random_sharpness:
+    factor: 2
+    p: 0.1
+  random_erasing:
+    probability: 0.75
+    scale: [0.02, 0.1]
+    value: 1.0
+    inplace: True

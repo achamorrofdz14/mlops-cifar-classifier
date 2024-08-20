@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "This repository demonstrates ML"
 authors = ["Adrián Chamorro Fernández <achamorrofdz14@gmail.com>"]
 readme = "README.md"
+packages = [{ include = "src/cifar_classifier" }]
+
+include = ["src/cifar_classifier/*"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -15,12 +18,20 @@ torch = "^2.4.0"
 requests = "^2.32.3"
 seaborn = "^0.13.2"
 scikit-learn = "^1.5.1"
+click = "^8.1.7"
+loguru = "^0.7.2"
+pytest-mock = "^3.14.0"
 
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 pytest = "^8.3.2"
+ruff = "^0.6.1"
+sphinx = "^8.0.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+cifar_classifier = "src.cifar_classifier.__main__:_main"
