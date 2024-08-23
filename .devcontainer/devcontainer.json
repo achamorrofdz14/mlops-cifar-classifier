@@ -4,8 +4,8 @@
         "context": "..",
 		"dockerfile": "Dockerfile"
 	},
-    "postCreateCommand": "poetry install",
     "containerUser": "root",
+    "postCreateCommand": "poetry install; git config --global --add safe.directory /workspaces/mlops-cifar-classifier; pre-commit install",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -23,4 +23,3 @@
         }
     }
   }
-  

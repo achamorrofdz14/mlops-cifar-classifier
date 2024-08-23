@@ -1,3 +1,5 @@
+"""Module containing unit tests for the process_data module."""
+
 from pathlib import Path
 from unittest import mock
 from unittest.mock import Mock
@@ -10,6 +12,7 @@ from src.cifar_classifier.data.process_data import _get_transformations
 # Constants for mocking
 TRAIN = "train"
 TEST = "test"
+
 
 @pytest.fixture
 def mock_config() -> dict:
@@ -39,11 +42,13 @@ def mock_config() -> dict:
         },
     }
 
+
 @pytest.fixture
 def mock_transforms() -> Mock:
     """Mock the transforms module."""
     with mock.patch("src.cifar_classifier.data.process_data.transforms") as mock_trans:
         yield mock_trans
+
 
 @pytest.fixture
 def mock_logger() -> Mock:
@@ -51,10 +56,14 @@ def mock_logger() -> Mock:
     with mock.patch("src.cifar_classifier.data.process_data.logger") as mock_log:
         yield mock_log
 
+
 @pytest.fixture
 def mock_open(mocker: Mock, mock_config: dict) -> Mock:
     """Mock the open function."""
-    return mocker.patch("builtins.open", mocker.mock_open(read_data=yaml.dump(mock_config)))
+    return mocker.patch(
+        "builtins.open", mocker.mock_open(read_data=yaml.dump(mock_config))
+    )
+
 
 @pytest.fixture
 def config_path(tmp_path: Path, mock_config: dict) -> Path:
@@ -63,8 +72,12 @@ def config_path(tmp_path: Path, mock_config: dict) -> Path:
     config_file.write_text(yaml.dump(mock_config))
     return config_file
 
+
 def test_get_transformations_train(
-    mock_transforms: Mock, mock_open: Mock, config_path: Path, mock_logger: Mock,
+    mock_transforms: Mock,
+    mock_open: Mock,
+    config_path: Path,
+    mock_logger: Mock,
 ) -> None:
     """Test getting transformations for the training dataset."""
     part = TRAIN
@@ -75,11 +88,17 @@ def test_get_transformations_train(
     calls = mock_transforms.Compose.call_args_list[0][0][0]
 
     assert len(calls) == 8  # Number of transformations for TRAIN
-    mock_logger.debug.assert_called_with("Getting transformations for training dataset.")
+    mock_logger.debug.assert_called_with(
+        "Getting transformations for training dataset."
+    )
     mock_logger.info.assert_called_with("Transformations for training dataset loaded.")
 
+
 def test_get_transformations_test(
-    mock_transforms: Mock, mock_open: Mock, config_path: Path, mock_logger: Mock,
+    mock_transforms: Mock,
+    mock_open: Mock,
+    config_path: Path,
+    mock_logger: Mock,
 ) -> None:
     """Test getting transformations for the test dataset."""
     part = TEST
@@ -93,6 +112,7 @@ def test_get_transformations_test(
     mock_logger.debug.assert_called_with("Getting transformations for test dataset.")
     mock_logger.info.assert_called_with("Transformations for test dataset loaded.")
 
+
 def test_invalid_part(mock_logger: Mock, config_path: Path) -> None:
     """Test that the function exits on an invalid dataset part."""
     invalid_part = "invalid"
@@ -102,14 +122,18 @@ def test_invalid_part(mock_logger: Mock, config_path: Path) -> None:
         mock_logger.error.assert_called_with(f"Invalid part {invalid_part}.")
         mock_exit.assert_called_once_with(1)
 
+
 def test_file_not_found_error(mock_logger: Mock) -> None:
     """Test handling of a missing configuration file."""
     config_path = Path("non_existent_file.yaml")
 
     with mock.patch("sys.exit") as mock_exit:
         _get_transformations(TRAIN, config_path)
-        mock_logger.error.assert_called_with(f"Configuration file not found in {config_path}.")
+        mock_logger.error.assert_called_with(
+            f"Configuration file not found in {config_path}."
+        )
         mock_exit.assert_called_once_with(1)
+
 
 def test_yaml_error(mock_open: Mock, mock_logger: Mock) -> None:
     """Test handling of a YAML parsing error."""
@@ -119,6 +143,7 @@ def test_yaml_error(mock_open: Mock, mock_logger: Mock) -> None:
         _get_transformations(TRAIN, Path("mock_path"))
         mock_logger.error.assert_called()
         mock_exit.assert_called_once_with(1)
+
 
 def test_general_exception(mock_open: Mock, mock_logger: Mock) -> None:
     """Test handling of a general exception."""
