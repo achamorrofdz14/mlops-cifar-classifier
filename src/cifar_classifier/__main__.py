@@ -18,5 +18,6 @@ def _main() -> None:
 
     entry_point()
 
+
 if __name__ == "__main__":
     _main()

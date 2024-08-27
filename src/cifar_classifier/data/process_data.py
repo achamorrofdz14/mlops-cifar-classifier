@@ -1,4 +1,4 @@
-# ruff: noqa: TRY003, FBT001, FBT003
+# ruff: noqa: TRY003, FBT001, FBT003, BLE001
 """Process data for CIFAR-10 classifier."""
 
 import sys
@@ -14,7 +14,8 @@ from src.cifar_classifier import CONFIG_DIR, DATA_DIR, TEST, TRAIN
 
 
 def _get_transformations(
-    part: str, config_path: Path,
+    part: str,
+    config_path: Path,
 ) -> transforms.Compose | tuple[transforms.Compose, transforms.Compose]:
     """Get transformations for CIFAR-10 dataset.
 
@@ -47,31 +48,42 @@ def _get_transformations(
 
         if part == TRAIN:
             logger.debug("Getting transformations for training dataset.")
-            composed_train = transforms.Compose([
-                transforms.Resize((image_size, image_size)),
-                transforms.RandomRotation(config["random_rotation"]),
-                transforms.RandomHorizontalFlip(config["random_horizontal_flip"]),
-                transforms.ColorJitter(brightness = config["color_jitter"]["brightness"],
-                                        contrast = config["color_jitter"]["contrast"],
-                                        saturation = config["color_jitter"]["saturation"]),
-                transforms.RandomAdjustSharpness(
-                    sharpness_factor=config["random_sharpness"]["factor"],
-                    p = config["random_sharpness"]["p"],
-                ),
-                transforms.ToTensor(),
-                transforms.Normalize(mean, std),
-                transforms.RandomErasing(p=config["random_erasing"]["probability"],
-                                        scale=tuple(config["random_erasing"]["scale"]),
-                                        value=config["random_erasing"]["value"],
-                                        inplace=config["random_erasing"]["inplace"])])
+            composed_train = transforms.Compose(
+                [
+                    transforms.Resize((image_size, image_size)),
+                    transforms.RandomRotation(config["random_rotation"]),
+                    transforms.RandomHorizontalFlip(config["random_horizontal_flip"]),
+                    transforms.ColorJitter(
+                        brightness=config["color_jitter"]["brightness"],
+                        contrast=config["color_jitter"]["contrast"],
+                        saturation=config["color_jitter"]["saturation"],
+                    ),
+                    transforms.RandomAdjustSharpness(
+                        sharpness_factor=config["random_sharpness"]["factor"],
+                        p=config["random_sharpness"]["p"],
+                    ),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean, std),
+                    transforms.RandomErasing(
+                        p=config["random_erasing"]["probability"],
+                        scale=tuple(config["random_erasing"]["scale"]),
+                        value=config["random_erasing"]["value"],
+                        inplace=config["random_erasing"]["inplace"],
+                    ),
+                ],
+            )
             logger.info("Transformations for training dataset loaded.")
 
             return composed_train
         if part == TEST:
             logger.debug("Getting transformations for test dataset.")
-            composed_test = transforms.Compose([transforms.Resize((image_size,image_size)),
-                                                transforms.ToTensor(),
-                                                transforms.Normalize(mean, std)])
+            composed_test = transforms.Compose(
+                [
+                    transforms.Resize((image_size, image_size)),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean, std),
+                ],
+            )
             logger.info("Transformations for test dataset loaded.")
 
             return composed_test
@@ -83,14 +95,17 @@ def _get_transformations(
         logger.error(f"Error parsing YAMLS file: {e.with_traceback()}")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"An error occurred getting trainsformations: {e.with_traceback()}")
+        logger.error(
+            f"An error occurred getting trainsformations: {e.with_traceback()}",
+        )
         sys.exit(1)
+
 
 def _load_transform(
     is_train: bool,
     out_dir: Path,
     composed: transforms.Compose,
-    ) -> dsets.CIFAR10:
+) -> dsets.CIFAR10:
     """Transform CIFAR-10 dataset.
 
     :param is_train: flag to download and process training data
@@ -110,10 +125,13 @@ def _load_transform(
             transform=composed,
         )
     except Exception as e:
-        logger.error(f"An error occurred loading and transforming the dataset:{e.with_traceback()}")
+        logger.error(
+            f"An error occurred loading and transforming the dataset:{e.with_traceback()}",
+        )
         sys.exit(1)
 
     return trans_dataset
+
 
 @click.command("process-data")
 @click.option(
@@ -152,7 +170,7 @@ def process_data(
     out_train_dir: Path,
     out_validation_dir: Path,
     config_path: Path,
-    ) -> dsets.CIFAR10 | tuple[dsets.CIFAR10, dsets.CIFAR10]:
+) -> dsets.CIFAR10 | tuple[dsets.CIFAR10, dsets.CIFAR10]:
     """Process CIFAR-10 dataset.
 
     :param train: flag to download and process training data
@@ -164,30 +182,34 @@ def process_data(
     :return train_dataset, validation_dataset: train and test datasets transformed
     """
     if not (train or validation):
-        raise click.UsageError("At least one of --train or --validation must be provided.")
+        raise click.UsageError(
+            "At least one of --train or --validation must be provided.",
+        )
 
     logger.debug("Processing CIFAR-10 dataset.")
 
     if train:
         logger.debug("Processing training data.")
         composed_train = _get_transformations(TRAIN, config_path)
-        train_dataset = _load_transform(is_train=True,
-                                        out_dir=out_train_dir,
-                                        composed=composed_train)
+        train_dataset = _load_transform(
+            is_train=True,
+            out_dir=out_train_dir,
+            composed=composed_train,
+        )
         logger.info("CIFAR-10 training dataset loaded and transformed.")
 
     if validation:
         logger.debug("Processing validation data.")
         composed_test = _get_transformations(TEST, config_path)
-        validation_dataset = _load_transform(is_train=False,
-                                             out_dir=out_validation_dir,
-                                             composed=composed_test)
+        validation_dataset = _load_transform(
+            is_train=False,
+            out_dir=out_validation_dir,
+            composed=composed_test,
+        )
         logger.info("CIFAR-10 validation dataset loaded and transformed.")
 
     if train and validation:
         return train_dataset, validation_dataset
     if train:
         return train_dataset
-    if validation:
-        return validation_dataset
-
+    return validation_dataset

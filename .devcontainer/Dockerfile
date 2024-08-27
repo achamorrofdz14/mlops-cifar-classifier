@@ -6,9 +6,9 @@ ENV WORKDIR=/workspaces/mlops-cifar-classifier
 
 USER root
 
-RUN apt-get update \
+RUN apt-get update  --allow-insecure-repositories\
     && apt-get install -y --no-install-recommends \
-        git \
+        git-all \
         curl \
         wget \
         htop \
@@ -16,11 +16,12 @@ RUN apt-get update \
         build-essential \
         python3-pip \
     && apt-get upgrade -y \
+    && apt-get autoremove -y\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip poetry==1.8.3
 
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock* ./
 RUN poetry config virtualenvs.create false
 RUN poetry install

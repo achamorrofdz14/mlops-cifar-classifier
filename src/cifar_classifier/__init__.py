@@ -1,3 +1,8 @@
+"""cifar_classifier package.
+
+It contains modules for data processing, model training, and evaluation.
+"""
+
 import os
 from pathlib import Path
 
