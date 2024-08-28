@@ -37,7 +37,7 @@ def _get_transformations(
         with config_path.open() as file:
             config = yaml.safe_load(file)
 
-        logger.info(f"Configuration file loaded from {config_path}")
+        logger.debug(f"Configuration file loaded from {config_path}")
 
         # Use config data values
         config = config["data"]
