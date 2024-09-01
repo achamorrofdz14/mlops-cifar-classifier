@@ -1,6 +1,7 @@
 # ruff: noqa: TRY003, FBT001, FBT003, BLE001
 """Process data for CIFAR-10 classifier."""
 
+import pickle
 import sys
 from pathlib import Path
 
@@ -10,7 +11,7 @@ import yaml
 from loguru import logger
 from torchvision.transforms import transforms
 
-from src.cifar_classifier import CONFIG_DIR, DATA_DIR, TEST, TRAIN
+from src.cifar_classifier import CONFIG_DIR, DATA_DIR, TRAIN, TRAIN_PATH, VAL, VAL_PATH
 
 
 def _get_transformations(
@@ -22,14 +23,14 @@ def _get_transformations(
     :param part: part of the dataset to transform
     :param config_path: Path where configuration file is stored
 
-    :return: composed_train, composed_test: transformations for training and test datasets
+    :return: composed_train, composed_val: transformations for training and val datasets
     """
     logger.debug(f"Getting transformations for {part} dataset.")
 
     try:
 
         # Check if the part is valid
-        if part not in [TRAIN, TEST]:
+        if part not in [TRAIN, VAL]:
             logger.error(f"Invalid part {part}.")
             sys.exit(1)
 
@@ -75,18 +76,18 @@ def _get_transformations(
             logger.info("Transformations for training dataset loaded.")
 
             return composed_train
-        if part == TEST:
-            logger.debug("Getting transformations for test dataset.")
-            composed_test = transforms.Compose(
+        if part == VAL:
+            logger.debug("Getting transformations for val dataset.")
+            composed_val = transforms.Compose(
                 [
                     transforms.Resize((image_size, image_size)),
                     transforms.ToTensor(),
                     transforms.Normalize(mean, std),
                 ],
             )
-            logger.info("Transformations for test dataset loaded.")
+            logger.info("Transformations for val dataset loaded.")
 
-            return composed_test
+            return composed_val
 
     except FileNotFoundError:
         logger.error(f"Configuration file not found in {config_path}.")
@@ -170,7 +171,7 @@ def process_data(
     out_train_dir: Path,
     out_validation_dir: Path,
     config_path: Path,
-) -> dsets.CIFAR10 | tuple[dsets.CIFAR10, dsets.CIFAR10]:
+) -> None:
     """Process CIFAR-10 dataset.
 
     :param train: flag to download and process training data
@@ -178,8 +179,6 @@ def process_data(
     :param out_train_dir: Path where output train data will be saved
     :param out_validation_dir: Path where output validation data will be saved
     :param config_path: Path where configuration file is stored
-
-    :return train_dataset, validation_dataset: train and test datasets transformed
     """
     if not (train or validation):
         raise click.UsageError(
@@ -193,23 +192,24 @@ def process_data(
         composed_train = _get_transformations(TRAIN, config_path)
         train_dataset = _load_transform(
             is_train=True,
-            out_dir=out_train_dir,
+            out_dir=out_train_dir / "raw",
             composed=composed_train,
         )
         logger.info("CIFAR-10 training dataset loaded and transformed.")
 
+        with Path.open(TRAIN_PATH, "wb") as f:
+            pickle.dump(train_dataset, f)
+
     if validation:
         logger.debug("Processing validation data.")
-        composed_test = _get_transformations(TEST, config_path)
+        composed_val = _get_transformations(VAL, config_path)
         validation_dataset = _load_transform(
             is_train=False,
-            out_dir=out_validation_dir,
-            composed=composed_test,
+            out_dir=out_validation_dir / "raw",
+            composed=composed_val,
         )
         logger.info("CIFAR-10 validation dataset loaded and transformed.")
 
-    if train and validation:
-        return train_dataset, validation_dataset
-    if train:
-        return train_dataset
-    return validation_dataset
+        # Save to pickle file
+        with Path.open(VAL_PATH, "wb") as f:
+            pickle.dump(validation_dataset, f)

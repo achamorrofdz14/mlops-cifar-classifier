@@ -11,7 +11,7 @@ from src.cifar_classifier.data.process_data import _get_transformations
 
 # Constants for mocking
 TRAIN = "train"
-TEST = "test"
+VAL = "val"
 
 
 @pytest.fixture
@@ -100,17 +100,17 @@ def test_get_transformations_test(
     config_path: Path,
     mock_logger: Mock,
 ) -> None:
-    """Test getting transformations for the test dataset."""
-    part = TEST
+    """Test getting transformations for the val dataset."""
+    part = VAL
     _get_transformations(part, config_path)
 
     # Check that transforms.Compose was called with expected operations
     assert mock_transforms.Compose.call_count == 1
     calls = mock_transforms.Compose.call_args_list[0][0][0]
 
-    assert len(calls) == 3  # Number of transformations for TEST
-    mock_logger.debug.assert_called_with("Getting transformations for test dataset.")
-    mock_logger.info.assert_called_with("Transformations for test dataset loaded.")
+    assert len(calls) == 3  # Number of transformations for VAL
+    mock_logger.debug.assert_called_with("Getting transformations for val dataset.")
+    mock_logger.info.assert_called_with("Transformations for val dataset loaded.")
 
 
 def test_invalid_part(mock_logger: Mock, config_path: Path) -> None:
