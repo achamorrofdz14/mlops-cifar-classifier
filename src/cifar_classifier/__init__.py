@@ -15,6 +15,10 @@ DATA_DIR = WORKDIR / "data"
 MODEL_DIR = WORKDIR / "models"
 CONFIG_DIR = WORKDIR / "config"
 
-# Datasets name
+# Dataset paths
+TRAIN_PATH = DATA_DIR / "train_dataset.pickle"
+VAL_PATH = DATA_DIR / "val_dataset.pickle"
+
+# Dataset categories name
 TRAIN = "train"
-TEST = "test"
+VAL = "val"
