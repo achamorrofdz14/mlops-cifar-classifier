@@ -3,6 +3,7 @@
 import click
 
 from .data import process_data
+from .model import train_model
 
 
 def _main() -> None:
@@ -14,6 +15,10 @@ def _main() -> None:
 
     entry_point.add_command(
         process_data.process_data,
+    )
+
+    entry_point.add_command(
+        train_model.train_model,
     )
 
     entry_point()

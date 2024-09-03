@@ -1,37 +1,41 @@
-# ruff: noqa
+# ruff: noqa: PLW2901
 """Implementation of the train_model function."""
 
-import torch
-import yaml
-from loguru import logger
-from torch.nn import nn
+import pickle
+from pathlib import Path
 
-from src.cifar_classifier import CONFIG_DIR, DATA_DIR
+import click
+import torch
+from loguru import logger
+from torch import nn
+
+from src.cifar_classifier import TRAIN_PATH, VAL_PATH
 from src.cifar_classifier.model.model import CIFARCNN
+from src.cifar_classifier.utils.config_utils import load_config
 
 # Assign GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def train_model(
-    train_loader,
-    validation_loader,
-):
+def load_datasets() -> tuple:
+    """Load the train and validation datasets."""
+    with Path.open(TRAIN_PATH, "rb") as f:
+        train_dataset = pickle.load(f)
+    with Path.open(VAL_PATH, "rb") as f:
+        validation_dataset = pickle.load(f)
+    return train_dataset, validation_dataset
 
+
+@click.command("train-model")
+def train_model() -> None:
+    """Train the CIFAR model."""
     logger.info(
         "-" * 20,
         "Training started",
         "-" * 20,
     )
 
-    config_path = CONFIG_DIR / "config.yml"
-
-    # Load the configuration file
-    with config_path.open() as file:
-        config = yaml.safe_load(file)
-
-    logger.debug(f"Configuration file loaded from {config_path}")
-
+    config = load_config()
     config_model = config["training"]["model"]
 
     model = CIFARCNN(
@@ -44,9 +48,8 @@ def train_model(
 
     logger.debug("Model loaded")
 
-    # TODO: Read dataset
+    train_dataset, validation_dataset = load_datasets()
 
-    # Create train and validation batch for training
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
         batch_size=config["training"]["batch_size"],
@@ -58,8 +61,7 @@ def train_model(
 
     logger.debug("Train and test dataset loaded")
 
-    # Global variable
-    N_test = len(validation_dataset)
+    n_test = len(validation_dataset)
 
     accuracy_list = []
     train_cost_list = []
@@ -91,7 +93,6 @@ def train_model(
         train_cost_list.append(train_cost)
         correct = 0
 
-        # Perform the prediction on the validation data
         val_cost = 0
         for x_test, y_test in validation_loader:
             model.eval()
@@ -106,14 +107,14 @@ def train_model(
         val_cost = val_cost / len(validation_loader)
         val_cost_list.append(val_cost)
 
-        accuracy = correct / N_test
+        accuracy = correct / n_test
         accuracy_list.append(accuracy)
 
         logger.info(
-            f"--> Epoch Number : {epoch + 1}",
-            f" | Training Loss : {round(train_cost,4)}",
-            f" | Validation Loss : {round(val_cost,4)}",
-            f" | Validation Accuracy : {round(accuracy * 100, 2)}%",
+            f"Epoch Results {epoch + 1}, train loss: {round(train_cost,4)}, "
+            f"val loss: {round(val_cost,4)}, val accuracy: {round(accuracy * 100, 2)}",
         )
 
-    return accuracy_list, train_cost_list, val_cost_list
+
+if __name__ == "__main__":
+    train_model()
