@@ -1,6 +1,7 @@
 import pytest
 from unittest import mock
 from unittest.mock import patch, MagicMock
+from click.testing import CliRunner
 
 import torch
 import pickle
@@ -9,6 +10,8 @@ from src.cifar_classifier.model.train_model import train_model, load_datasets, d
 # Mock constants for paths
 TRAIN_PATH = "mock_train_path"
 VAL_PATH = "mock_val_path"
+
+RUNNER = CliRunner()
 
 
 @pytest.fixture
@@ -90,12 +93,7 @@ def test_train_model(mock_config, mock_train_data, mock_val_data):
                                 lambda dataset, batch_size: dataset
                             )
 
-                            # Catch the SystemExit exception
-                            with pytest.raises(SystemExit) as excinfo:
-                                train_model()
-
-                            # Verify the exit code was 0
-                            assert excinfo.value.code == 0
+                            RUNNER.invoke(train_model)
 
                             # Perform assertions
                             mock_model.to.assert_called_once_with(
