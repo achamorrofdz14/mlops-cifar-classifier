@@ -18,3 +18,13 @@ data:
     scale: [0.02, 0.1]
     value: 1.0
     inplace: True
+training:
+  epochs: 200
+  batch_size: 100
+  learning_rate: 0.1
+  momentum: 0.2
+  model:
+    out_conv_1: 32
+    out_conv_2: 64
+    out_conv_3: 128
+    dropout_p: 0.5

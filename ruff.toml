@@ -54,4 +54,5 @@ lint.select = [
 ]
 
 lint.ignore = [
+    "S301"
 ]
