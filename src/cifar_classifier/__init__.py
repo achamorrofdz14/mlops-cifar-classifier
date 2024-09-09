@@ -14,6 +14,7 @@ WORKDIR = Path(os.getenv("WORKDIR", BASEPATH.parent))
 DATA_DIR = WORKDIR / "data"
 MODEL_DIR = WORKDIR / "models"
 CONFIG_DIR = WORKDIR / "config"
+PCKG_DIR = WORKDIR / "src" / "cifar_classifier"
 
 # Dataset paths
 TRAIN_PATH = DATA_DIR / "train_dataset.pickle"
@@ -22,3 +23,5 @@ VAL_PATH = DATA_DIR / "val_dataset.pickle"
 # Dataset categories name
 TRAIN = "train"
 VAL = "val"
+
+MODEL_FPATH = PCKG_DIR / "model" / "model.py"

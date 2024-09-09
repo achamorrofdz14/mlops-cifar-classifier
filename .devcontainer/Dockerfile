@@ -3,6 +3,9 @@ FROM python:3.10-slim-bullseye
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV WORKDIR=/workspaces/mlops-cifar-classifier
+ENV MLFLOW_TRACKING_URI="http://127.0.0.1:5000"
+ENV MLFLOW_ARTIFACT_ROOT=/workspaces/mlops-cifar-classifier/mlflow-artifacts
+
 
 USER root
 
@@ -15,6 +18,7 @@ RUN apt-get update  --allow-insecure-repositories\
         vim \
         build-essential \
         python3-pip \
+        tmux \
     && apt-get upgrade -y \
     && apt-get autoremove -y\
     && apt-get clean \

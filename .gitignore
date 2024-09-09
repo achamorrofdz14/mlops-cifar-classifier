@@ -172,3 +172,8 @@ models/**
 
 # also keep all .gitkeep files
 !.gitkeep
+
+#MLFLOW
+mlruns/**/
+mlartifacts/**/
+mlflow.db

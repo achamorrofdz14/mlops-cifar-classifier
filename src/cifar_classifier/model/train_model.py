@@ -5,13 +5,15 @@ import pickle
 from pathlib import Path
 
 import click
+import mlflow
 import torch
 from loguru import logger
 from torch import nn
 
-from src.cifar_classifier import TRAIN_PATH, VAL_PATH
+from src.cifar_classifier import MODEL_FPATH, TRAIN_PATH, VAL_PATH
 from src.cifar_classifier.model.model import CIFARCNN
 from src.cifar_classifier.utils.config_utils import load_config
+from src.cifar_classifier.utils.git_utils import get_git_user_name
 
 # Assign GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -26,16 +28,8 @@ def load_datasets() -> tuple:
     return train_dataset, validation_dataset
 
 
-@click.command("train-model")
-def train_model() -> None:
-    """Train the CIFAR model."""
-    logger.info(
-        "-" * 20,
-        "Training started",
-        "-" * 20,
-    )
-
-    config = load_config()
+def load_model(config: dict) -> CIFARCNN:
+    """Load the CIFAR model."""
     config_model = config["training"]["model"]
 
     model = CIFARCNN(
@@ -47,6 +41,24 @@ def train_model() -> None:
     model = model.to(device)
 
     logger.debug("Model loaded")
+    return model
+
+
+@click.command("train-model")
+@click.option("--experiment-name", help="Name of the experiment")
+@click.option("--run-reason", help="Reason for running the training")
+@click.option("--team", help="Team responsible for the training")
+def train_model(
+    experiment_name: str,
+    run_reason: str,
+    team: str,
+) -> None:
+    """Train the CIFAR model."""
+    mlflow.set_experiment(experiment_name)
+
+    config = load_config()
+
+    model = load_model(config)
 
     train_dataset, validation_dataset = load_datasets()
 
@@ -113,6 +125,31 @@ def train_model() -> None:
         logger.info(
             f"Epoch Results {epoch + 1}, train loss: {round(train_cost,4)}, "
             f"val loss: {round(val_cost,4)}, val accuracy: {round(accuracy * 100, 2)}",
+        )
+
+    with mlflow.start_run():
+
+        mlflow.set_tags(
+            {
+                "Run Reason": run_reason,
+                "Responsible User": get_git_user_name(),
+                "Team": team,
+                "Model Type": "CNN",
+            },
+        )
+
+        mlflow.log_params(config["training"])
+        mlflow.log_metrics(
+            {
+                "train_loss": train_cost,
+                "val_loss": val_cost,
+                "val_accuracy": accuracy,
+            },
+        )
+        mlflow.pytorch.log_model(
+            pytorch_model=model,
+            artifact_path="cifar_classifier_model",
+            code_paths=[MODEL_FPATH],
         )
 
 

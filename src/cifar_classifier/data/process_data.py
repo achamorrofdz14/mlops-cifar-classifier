@@ -213,3 +213,7 @@ def process_data(
         # Save to pickle file
         with Path.open(VAL_PATH, "wb") as f:
             pickle.dump(validation_dataset, f)
+
+
+if __name__ == "__main__":
+    process_data()

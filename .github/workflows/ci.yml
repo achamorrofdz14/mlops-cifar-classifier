@@ -4,10 +4,12 @@ on:
     pull_request:
         branches:
             - main
+            - release
             - develop
     push:
         branches:
             - main
+            - release
             - develop
 
 jobs:
@@ -31,10 +33,36 @@ jobs:
 
             - name: Run data tests
               run: |
-                pytest -v -s --disable-warnings --cov=./src/cifar_classifier/data --cov-report=xml:./reports/coverage.xml tests
+                make tests
 
             - name: Upload Coverage Report
               uses: actions/upload-artifact@v3
               with:
                 name: coverage-report
                 path: reports/coverage.xml
+    train:
+        needs: test
+        runs-on: ubuntu-latest
+
+        if: github.ref == 'refs/heads/release'
+        steps:
+            - name: Check out the repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.10'
+
+            - name: Install dependencies
+              run: |
+                pip install --upgrade pip poetry==1.8.3
+                poetry config virtualenvs.create false
+                poetry install
+
+            - name: Train model
+              run: |
+                python3 src/cifar_classifier/model/train_model.py --experiment_name pre_cifar_classifier --team MLOps --run-reason release
+
+            - name: Save best model to registry
+              run: #TODO
