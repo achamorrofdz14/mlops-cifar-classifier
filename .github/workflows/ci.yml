@@ -64,5 +64,6 @@ jobs:
               run: |
                 python3 src/cifar_classifier/model/train_model.py --experiment_name pre_cifar_classifier --team MLOps --run-reason release
 
-            - name: Save best model to registry
-              run: #TODO
+            #TODO
+            # - name: Save best model to registry
+            #   run:
