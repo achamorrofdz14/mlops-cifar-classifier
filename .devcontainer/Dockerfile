@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bullseye
+FROM pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel
 
 ARG DEBIAN_FRONTEND=noninteractive
 

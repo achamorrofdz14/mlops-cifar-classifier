@@ -5,6 +5,9 @@
 		"dockerfile": "Dockerfile"
 	},
     "containerUser": "root",
+    "runArgs": [
+        "--gpus", "all"
+    ],
     "postCreateCommand": "poetry install; git config --global --add safe.directory /workspaces/mlops-cifar-classifier; pre-commit install",
     "customizations": {
         "vscode": {
@@ -13,7 +16,8 @@
                 "ms-toolsai.jupyter",
                 "eamodio.gitlens",
                 "charliermarsh.ruff",
-                "github.vscode-github-actions"
+                "github.vscode-github-actions",
+                "GitHub.copilot"
             ]
         },
         "settings": {

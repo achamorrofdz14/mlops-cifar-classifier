@@ -19,7 +19,7 @@ data:
     value: 1.0
     inplace: True
 training:
-  epochs: 1
+  epochs: 2
   batch_size: 100
   learning_rate: 0.1
   momentum: 0.2

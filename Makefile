@@ -5,13 +5,17 @@ PYTHON=python3
 tests:
 	pytest -v -s --disable-warnings --cov=./src/cifar_classifier/data --cov-report=xml:./reports/coverage.xml tests
 
-.PHONY: mlflow-start
-mlflow-start:
+.PHONY: mlflow
+mlflow:
 	mlflow server
 
 .PHONY: data
 data:
-	${PYTHON} src/cifar_classifier/data/process_data.py --train --validation
+	@if [ ! -f "data/train_dataset.pickle" ] || [ ! -f "data/val_dataset.pickle" ]; then \
+		${PYTHON} src/cifar_classifier/data/process_data.py --train --validation; \
+	else \
+		echo "Processed data already exists. Skipping data processing."; \
+	fi
 
 .PHONY: train
 train: data
