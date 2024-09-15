@@ -8,8 +8,9 @@ import click
 import mlflow
 import torch
 from loguru import logger
+import numpy as np
 
-# from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from torch import nn
 
 from src.cifar_classifier import MODEL_FPATH, TRAIN_PATH, VAL_PATH
@@ -97,116 +98,11 @@ def train_model(
 
     config = load_config()
 
-    model = load_model(config)
-
     train_dataset, validation_dataset = load_datasets()
 
-    # y_train = [label for _, label in train_dataset]
+    y_train = [label for _, label in train_dataset]
 
-    # skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
-
-    # for fold, (train_index, val_index) in enumerate(skf.split(train_dataset, y_train)):
-
-    #     logger.info(f"Training fold {fold + 1}/{n_splits}")
-
-    #     train_dataset_fold = torch.utils.data.Subset(train_dataset, train_index)
-    #     validation_dataset_fold = torch.utils.data.Subset(train_dataset, val_index)
-
-    #     train_fold_loader = torch.utils.data.DataLoader(
-    #         dataset=train_dataset_fold,
-    #         batch_size=config["training"]["batch_size"],
-    #     )
-
-    #     validation_fold_loader = torch.utils.data.DataLoader(
-    #         dataset=validation_dataset_fold,
-    #         batch_size=config["training"]["batch_size"],
-    #     )
-
-    #     n_fold = len(validation_dataset_fold)
-
-    #     accuracy_list = []
-    #     train_cost_list = []
-    #     val_cost_list = []
-
-    #     len_train_fold_loader = len(train_fold_loader)
-    #     len_val_fold_loader = len(validation_fold_loader)
-
-    #     criterion = nn.CrossEntropyLoss()
-    #     n_epochs = config["training"]["epochs"]
-    #     learning_rate = config["training"]["learning_rate"]
-    #     optimizer = torch.optim.SGD(
-    #         model.parameters(),
-    #         lr=learning_rate,
-    #         momentum=config["training"]["momentum"],
-    #     )
-
-    #     for epoch in range(n_epochs):
-    #         train_cost = 0
-    #         train(model, optimizer, criterion, train_fold_loader)
-
-    #         train_cost = train_cost / len_train_fold_loader
-    #         train_cost_list.append(train_cost)
-
-    #         val_cost, correct = evaluate(model, criterion, validation_fold_loader)
-
-    #         val_cost = val_cost / len_val_fold_loader
-    #         val_cost_list.append(val_cost)
-
-    #         accuracy = correct / n_fold
-    #         accuracy_list.append(accuracy)
-
-    #         logger.info(
-    #             f"Epoch Results {epoch + 1}, train loss: {round(train_cost,4)}, "
-    #             f"val loss: {round(val_cost,4)}, val accuracy: {round(accuracy * 100, 2)}",
-    #         )
-
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        batch_size=config["training"]["batch_size"],
-    )
-    validation_loader = torch.utils.data.DataLoader(
-        dataset=validation_dataset,
-        batch_size=config["training"]["batch_size"],
-    )
-
-    logger.debug("Train and test dataset loaded")
-
-    n_test = len(validation_dataset)
-
-    accuracy_list = []
-    train_cost_list = []
-    val_cost_list = []
-
-    len_train_loader = len(train_loader)
-    len_val_loader = len(validation_loader)
-
-    criterion = nn.CrossEntropyLoss()
-    n_epochs = config["training"]["epochs"]
-    learning_rate = config["training"]["learning_rate"]
-    optimizer = torch.optim.SGD(
-        model.parameters(),
-        lr=learning_rate,
-        momentum=config["training"]["momentum"],
-    )
-
-    for epoch in range(n_epochs):
-        train_cost = train(model, optimizer, criterion, train_loader)
-
-        train_cost = train_cost / len_train_loader
-        train_cost_list.append(train_cost)
-
-        val_cost, correct = evaluate(model, criterion, validation_loader)
-
-        val_cost = val_cost / len_val_loader
-        val_cost_list.append(val_cost)
-
-        accuracy = correct / n_test
-        accuracy_list.append(accuracy)
-
-        logger.info(
-            f"Epoch Results {epoch + 1}, train loss: {round(train_cost,4)}, "
-            f"val loss: {round(val_cost,4)}, val accuracy: {round(accuracy * 100, 2)}",
-        )
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
     with mlflow.start_run():
 
@@ -216,17 +112,86 @@ def train_model(
                 "Responsible User": get_git_user_name(),
                 "Team": team,
                 "Model Type": "CNN",
+                "Device": device.type,
             },
         )
 
-        mlflow.log_params(config["training"])
-        mlflow.log_metrics(
-            {
-                "train_loss": train_cost,
-                "val_loss": val_cost,
-                "val_accuracy": accuracy,
-            },
+        accuracy_list = []
+        train_cost_list = []
+        val_cost_list = []
+
+        for fold, (train_index, val_index) in enumerate(
+            skf.split(train_dataset, y_train)
+        ):
+
+            logger.info(f"Training fold {fold + 1}/{n_splits}")
+
+            model = load_model(config)
+
+            train_dataset_fold = torch.utils.data.Subset(train_dataset, train_index)
+            validation_dataset_fold = torch.utils.data.Subset(train_dataset, val_index)
+
+            train_fold_loader = torch.utils.data.DataLoader(
+                dataset=train_dataset_fold,
+                batch_size=config["training"]["batch_size"],
+            )
+
+            validation_fold_loader = torch.utils.data.DataLoader(
+                dataset=validation_dataset_fold,
+                batch_size=config["training"]["batch_size"],
+            )
+
+            n_fold = len(validation_dataset_fold)
+
+            len_train_fold_loader = len(train_fold_loader)
+            len_val_fold_loader = len(validation_fold_loader)
+
+            criterion = nn.CrossEntropyLoss()
+            n_epochs = config["training"]["epochs"]
+            learning_rate = config["training"]["learning_rate"]
+            optimizer = torch.optim.SGD(
+                model.parameters(),
+                lr=learning_rate,
+                momentum=config["training"]["momentum"],
+            )
+
+            for epoch in range(n_epochs):
+                train_cost = 0
+                train_cost = train(model, optimizer, criterion, train_fold_loader)
+                train_cost = train_cost / len_train_fold_loader
+
+                val_cost, correct = evaluate(model, criterion, validation_fold_loader)
+                val_cost = val_cost / len_val_fold_loader
+                accuracy = correct / n_fold
+
+                logger.info(
+                    f"Epoch Results {epoch + 1}, train loss: {round(train_cost, 4)}, "
+                    f"val loss: {round(val_cost,4)}, val accuracy: {round(accuracy * 100, 2)}",
+                )
+
+            train_cost_list.append(train_cost)
+            val_cost_list.append(val_cost)
+            accuracy_list.append(accuracy)
+
+            mlflow.log_params(config["training"])
+            mlflow.log_metric(f"train_loss_{fold}", train_cost)
+            mlflow.log_metric(f"val_loss_{fold}", val_cost)
+            mlflow.log_metric(f"val_accuracy_{fold}", accuracy)
+
+        mlflow.log_metric("mean_val_accuracy", np.mean(accuracy_list))
+        mlflow.log_metric("mean_val_loss", np.mean(val_cost_list))
+        mlflow.log_metric("mean_train_loss", np.mean(train_cost_list))
+
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=config["training"]["batch_size"],
         )
+
+        logger.debug("Train and test dataset loaded")
+
+        for epoch in range(n_epochs):
+            train(model, optimizer, criterion, train_loader)
+
         mlflow.pytorch.log_model(
             pytorch_model=model,
             artifact_path="cifar_classifier_model",
