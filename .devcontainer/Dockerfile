@@ -28,4 +28,4 @@ RUN pip install --upgrade pip poetry==1.8.3
 
 COPY pyproject.toml poetry.lock* ./
 RUN poetry config virtualenvs.create false
-RUN poetry install
+RUN poetry install --no-root

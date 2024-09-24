@@ -15,8 +15,12 @@ from torch import nn
 
 from src.cifar_classifier import MODEL_FPATH, TRAIN_PATH, VAL_PATH
 from src.cifar_classifier.model.model import CIFARCNN
-from src.cifar_classifier.utils.config_utils import load_config
-from src.cifar_classifier.utils.git_utils import get_git_user_name
+from src.cifar_classifier.utils.config import load_config
+from src.cifar_classifier.utils.git import get_git_user_name
+from src.cifar_classifier.utils.model import (
+    get_best_and_last_experiment_run_id,
+    save_model_to_registry,
+)
 
 # Assign GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -86,12 +90,12 @@ def evaluate(model, criterion, data_loader):
 @click.option("--experiment-name", help="Name of the experiment")
 @click.option("--run-reason", help="Reason for running the training")
 @click.option("--team", help="Team responsible for the training")
-@click.option("--n_splits", default=3, help="Number of splits for the cross-validation")
+@click.option("--n_splits", default=2, help="Number of splits for the cross-validation")
 def train_model(
     experiment_name: str,
     run_reason: str,
     team: str,
-    n_splits: int = 3,
+    n_splits: int = 2,
 ) -> None:
     """Train the CIFAR model."""
     mlflow.set_experiment(experiment_name)
@@ -192,11 +196,20 @@ def train_model(
         for epoch in range(n_epochs):
             train(model, optimizer, criterion, train_loader)
 
+        input_shape = next(iter(train_loader))[0].shape
+
+        mlflow.set_tag("input_shape", str(input_shape))
+
         mlflow.pytorch.log_model(
             pytorch_model=model,
             artifact_path="cifar_classifier_model",
             code_paths=[MODEL_FPATH],
         )
+
+        run_id = get_best_and_last_experiment_run_id(
+            experiment_id=mlflow.active_run().info.experiment_id, threshold=0.7
+        )
+    save_model_to_registry(run_id=run_id)
 
 
 if __name__ == "__main__":
