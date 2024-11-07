@@ -1,0 +1,23 @@
+name: Reusable setup
+
+on:
+    workflow_call:
+
+jobs:
+    setup:
+        runs-on: python:3.10-bullseye
+
+        steps:
+            - name: Check out the repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.10'
+
+            - name: Install dependencies
+              run: |
+                pip install --upgrade pip poetry==1.8.3
+                poetry config virtualenvs.create false
+                poetry install

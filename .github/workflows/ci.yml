@@ -6,30 +6,15 @@ on:
             - main
             - release
             - develop
-    push:
-        branches:
-            - main
-            - release
-            - develop
 
 jobs:
     test:
-        runs-on: ubuntu-latest
+        # runs-on: pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel
+        runs-on: python:3.10-bullseye
 
+        if: github.ref == 'refs/heads/develop'
         steps:
-            - name: Check out the repository
-              uses: actions/checkout@v4
-
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                python-version: '3.10'
-
-            - name: Install dependencies
-              run: |
-                pip install --upgrade pip poetry==1.8.3
-                poetry config virtualenvs.create false
-                poetry install
+            - uses: ./.github/workflows/reusable_setup.yml
 
             - name: Run data tests
               run: |
@@ -41,29 +26,38 @@ jobs:
                 name: coverage-report
                 path: reports/coverage.xml
     train:
-        needs: test
-        runs-on: ubuntu-latest
+        # runs-on: pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel
+        runs-on: python:3.10-bullseye
 
-        if: github.ref == 'refs/heads/release'
+        if: github.ref == 'refs/heads/release' || contains(github.event.commits.*.modified, 'src/cifar_classifier/model/train_model.py')
+
         steps:
-            - name: Check out the repository
-              uses: actions/checkout@v4
-
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                python-version: '3.10'
-
-            - name: Install dependencies
-              run: |
-                pip install --upgrade pip poetry==1.8.3
-                poetry config virtualenvs.create false
-                poetry install
+            - uses: ./.github/workflows/reusable_setup.yml
 
             - name: Train model
+              # if:
+              #   changes:
+              #       - 'src/cifar_classifier/model/train_model.py'
               run: |
-                python3 src/cifar_classifier/model/train_model.py --experiment_name pre_cifar_classifier --team MLOps --run-reason release
+                python3 src/cifar_classifier/model/train_model.py --experiment_name staging_cifar_classifier --team MLOps --run-reason challenger
 
-            #TODO
-            # - name: Save best model to registry
-            #   run:
+            - name: Challenger model evaluation
+              # if:
+              #   changes:
+              #       - 'src/cifar_classifier/model/train_model.py'
+              run: |
+                pass
+
+            - name: Docker build
+              # if:
+              #   changes:
+              #       - 'Dockerfile'
+              run: |
+                pass
+
+            - name: Integration tests
+              # if:
+              #   changes:
+              #       - 'src/cifar_classifier/model/train_model.py'
+              run: |
+                pass

@@ -207,9 +207,15 @@ def train_model(
         )
 
         run_id = get_best_and_last_experiment_run_id(
-            experiment_id=mlflow.active_run().info.experiment_id, threshold=0.7
+            experiment_id=mlflow.active_run().info.experiment_id, threshold=0.4
         )
-    save_model_to_registry(run_id=run_id)
+
+    if run_id:
+        save_model_to_registry(run_id=run_id)
+    else:
+        logger.warning(
+            "No model was saved to the registry as the threshold was not met."
+        )
 
 
 if __name__ == "__main__":

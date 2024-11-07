@@ -30,14 +30,18 @@ def get_best_and_last_experiment_run_id(
     threshold: float,
 ) -> str:
     """Get the run_id of the best experiment based on the threshold."""
-    experiment = mlflow.get_experiment(experiment_id)
     query = f"metrics.mean_val_accuracy > {threshold}"
     search_results = mlflow.search_runs(
-        experiment.experiment_id,
+        experiment_id,
         filter_string=query,
         run_view_type=mlflow.entities.ViewType.ACTIVE_ONLY,
     )
+
+    if search_results.empty:
+        return None
+
     last_run = search_results[
         search_results["start_time"] == search_results["start_time"].max()
     ]
+
     return last_run["run_id"][0]
